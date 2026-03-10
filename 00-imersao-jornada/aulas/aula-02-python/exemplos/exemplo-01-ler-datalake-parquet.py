@@ -35,87 +35,87 @@ import pandas as pd
 import io
 
 # Baixar arquivo Parquet
-FILE_KEY = "preco_competidores.parquet"
+FILE_KEY = "vendas.parquet"
 response = s3.get_object(Bucket=BUCKET_NAME, Key=FILE_KEY)
 parquet_bytes = response["Body"].read()
 
 # Converter Parquet para DataFrame
-df_precos = pd.read_parquet(io.BytesIO(parquet_bytes))
+df_vendas = pd.read_parquet(io.BytesIO(parquet_bytes))
 
 # ============================================
 # EXPLORANDO DADOS COM PANDAS
 # ============================================
 
 # Visualizar primeiras linhas
-df_precos.head()
+df_vendas.head()
 
 # Visualizar últimas linhas
-df_precos.tail()
+df_vendas.tail()
 
 # Informações do DataFrame (tipos, memória, etc)
-df_precos.info()
+df_vendas.info()
 
 # Estatísticas descritivas (média, mediana, desvio padrão, etc)
-df_precos.describe()
+df_vendas.describe()
 
 # Estatísticas de uma coluna específica
-df_precos["preco_concorrente"].describe()
+df_vendas["preco_unitario"].describe()
 
 # Contar valores únicos
-df_precos["nome_concorrente"].value_counts()
+df_vendas["id_produto"].value_counts()
 
 # Contar valores únicos com percentual
-df_precos["nome_concorrente"].value_counts(normalize=True)
+df_vendas["id_produto"].value_counts(normalize=True)
 
 # Agrupar e agregar dados
-# Exemplo: Preço médio por concorrente
-df_precos.groupby("nome_concorrente")["preco_concorrente"].mean()
+# Exemplo: Preço médio por produto
+df_vendas.groupby("id_produto")["preco_unitario"].mean()
 
 # Múltiplas agregações
-df_precos.groupby("nome_concorrente")["preco_concorrente"].agg(["mean", "min", "max", "count"])
+df_vendas.groupby("id_produto")["preco_unitario"].agg(["mean", "min", "max", "count"])
 
 # Agrupar por múltiplas colunas
-df_precos.groupby(["nome_concorrente", "id_produto"])["preco_concorrente"].mean()
+df_vendas.groupby(["id_produto", "id_cliente"])["quantidade"].sum()
 
 # Filtrar dados
-# Produtos com preço maior que 100
-df_precos[df_precos["preco_concorrente"] > 100]
+# Vendas com preço maior que 100
+df_vendas[df_vendas["preco_unitario"] > 100]
 
 # Filtrar por múltiplas condições
-df_precos[(df_precos["preco_concorrente"] > 100) & (df_precos["nome_concorrente"] == "Amazon")]
+df_vendas[(df_vendas["preco_unitario"] > 100) & (df_vendas["quantidade"] > 1)]
 
 # Ordenar dados
-df_precos.sort_values("preco_concorrente", ascending=False)
+df_vendas.sort_values("preco_unitario", ascending=False)
 
 # Ordenar por múltiplas colunas
-df_precos.sort_values(["nome_concorrente", "preco_concorrente"], ascending=[True, False])
+df_vendas.sort_values(["id_produto", "preco_unitario"], ascending=[True, False])
 
 # Selecionar colunas específicas
-df_precos[["id_produto", "nome_concorrente", "preco_concorrente"]]
+df_vendas[["id_produto", "quantidade", "preco_unitario"]]
 
 # Criar nova coluna calculada
-df_precos["preco_arredondado"] = df_precos["preco_concorrente"].round(0)
+df_vendas["receita"] = df_vendas["quantidade"] * df_vendas["preco_unitario"]
 
 # Contar linhas e colunas
-len(df_precos)  # Número de linhas
-df_precos.shape  # (linhas, colunas)
+len(df_vendas)  # Número de linhas
+df_vendas.shape  # (linhas, colunas)
 
 # Verificar valores únicos
-df_precos["nome_concorrente"].unique()
-df_precos["nome_concorrente"].nunique()  # Quantidade de valores únicos
+df_vendas["id_produto"].unique()
+df_vendas["id_produto"].nunique()  # Quantidade de valores únicos
 
 # Verificar valores faltantes
-df_precos.isnull().sum()
+df_vendas.isnull().sum()
 
 # Verificar duplicatas
-df_precos.duplicated().sum()
+df_vendas.duplicated().sum()
 
 # Top N valores
-df_precos.nlargest(10, "preco_concorrente")  # Top 10 preços mais altos
-df_precos.nsmallest(10, "preco_concorrente")  # Top 10 preços mais baixos
+df_vendas.nlargest(10, "preco_unitario")  # Top 10 preços mais altos
+df_vendas.nsmallest(10, "preco_unitario")  # Top 10 preços mais baixos
 
-# Converter data_coleta para datetime (se necessário)
-df_precos["data_coleta"] = pd.to_datetime(df_precos["data_coleta"])
+# Converter data_venda para datetime (se necessário)
+df_vendas["data_venda"] = pd.to_datetime(df_vendas["data_venda"])
 
 # Agrupar por data e calcular média
-df_precos.groupby(df_precos["data_coleta"].dt.date)["preco_concorrente"].mean()
+df_vendas.groupby(df_vendas["data_venda"].dt.date)["preco_unitario"].mean()

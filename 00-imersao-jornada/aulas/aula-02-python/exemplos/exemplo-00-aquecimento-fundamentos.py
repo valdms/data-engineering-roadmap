@@ -44,16 +44,12 @@ lista_tenis = [
     {"nome": "Tênis Converse Chuck", "marca": "Converse", "preco": 349.90}
 ]
 
-# Dicionário aninhado (estrutura comum em dados JSON)
-dados_produto = {
-    "produto": {
-        "nome": "Tênis Nike Air Max",
-        "preco": "599.90",  # Vem como string!
-        "categoria": "Tênis"
-    }
-}
+# For loop - Percorrer uma lista
+# É assim que iteramos sobre dados no Python!
+for tenis_item in lista_tenis:
+    print(f"{tenis_item['nome']} - R$ {tenis_item['preco']}")
 
-# Processar dados do dicionário
-nome = dados_produto["produto"]["nome"]
-preco_str = dados_produto["produto"]["preco"]
-preco_float = float(preco_str)  # Converter string para float
+# For loop com lista simples
+tabelas = ["produtos", "clientes", "vendas", "preco_competidores"]
+for tabela in tabelas:
+    print(f"Processando: {tabela}.parquet")
