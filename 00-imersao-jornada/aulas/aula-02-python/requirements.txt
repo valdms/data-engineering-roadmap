@@ -4,9 +4,6 @@
 pandas>=2.0.0
 numpy>=1.24.0
 
-# Requisições HTTP e APIs
-requests>=2.31.0
-
 # Data Lakes (S3, Supabase Storage, etc)
 boto3>=1.28.0  # Cliente AWS S3 (compatível com Supabase Storage)
 

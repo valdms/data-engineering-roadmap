@@ -44,17 +44,16 @@ lista_tenis = [
     {"nome": "Tênis Converse Chuck", "marca": "Converse", "preco": 349.90}
 ]
 
-# Simulando dados de uma API (vem como JSON = dicionário Python)
-# GUARDE BEM ISSO: APIs retornam dados em JSON, que são dicionários em Python!
-dados_api = {
+# Dicionário aninhado (estrutura comum em dados JSON)
+dados_produto = {
     "produto": {
         "nome": "Tênis Nike Air Max",
-        "preco": "599.90",  # Vem como string da API!
+        "preco": "599.90",  # Vem como string!
         "categoria": "Tênis"
     }
 }
 
-# Processar dados da API
-nome = dados_api["produto"]["nome"]
-preco_str = dados_api["produto"]["preco"]
+# Processar dados do dicionário
+nome = dados_produto["produto"]["nome"]
+preco_str = dados_produto["produto"]["preco"]
 preco_float = float(preco_str)  # Converter string para float

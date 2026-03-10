@@ -8,7 +8,7 @@ Bem-vindo ao **segundo dia da imersão Jornada de Dados**! Hoje você vai aprend
 
 **Python** é uma linguagem de programação versátil e poderosa que se tornou o padrão da indústria para trabalhar com dados. É a ferramenta que permite:
 
-- ✅ **Ingerir dados** - Coletar dados de APIs, arquivos externos, bancos de dados, Data Lakes
+- ✅ **Ingerir dados** - Coletar dados de arquivos externos, bancos de dados, Data Lakes
 - ✅ **Processar dados** - Limpar, transformar e preparar dados para análise
 - ✅ **Analisar dados** - Fazer análises estatísticas e exploratórias
 - ✅ **Automatizar tarefas** - Criar scripts que fazem o trabalho pesado
@@ -30,7 +30,6 @@ O diagrama abaixo mostra como Python atua como **ponte** entre diferentes fontes
 ```mermaid
 graph TB
     subgraph "🌐 Fontes de Dados Externas"
-        API[📡 APIs REST<br/>Bitcoin, NASA, etc]
         ARQ[📁 Arquivos Externos<br/>GitHub, S3, URLs]
         BANCO[🗄️ Outros Bancos<br/>PostgreSQL, MySQL]
         LAKE[💾 Data Lakes<br/>S3, Azure, GCS]
@@ -51,11 +50,10 @@ graph TB
         NOVOS_DADOS[(🆕 novos_dados)]
     end
     
-    API -->|requests.get| EXTRAIR
-    ARQ -->|requests + pandas| EXTRAIR
+    ARQ -->|pandas| EXTRAIR
     BANCO -->|sqlalchemy| EXTRAIR
     LAKE -->|boto3/pyarrow| EXTRAIR
-    SISTEMA -->|API/arquivos| EXTRAIR
+    SISTEMA -->|arquivos| EXTRAIR
     
     EXTRAIR --> TRANSFORMAR
     TRANSFORMAR --> VALIDAR
@@ -65,7 +63,6 @@ graph TB
     VALIDAR -->|pandas.to_sql| CONCORRENTES
     VALIDAR -->|pandas.to_sql| NOVOS_DADOS
     
-    style API fill:#4A90E2,color:#fff
     style ARQ fill:#FF6B6B,color:#fff
     style BANCO fill:#FFA500,color:#fff
     style LAKE fill:#9B59B6,color:#fff
@@ -104,7 +101,6 @@ graph TB
 | **NumPy** | 🔢 | Computação numérica e arrays multidimensionais | [numpy/numpy](https://github.com/numpy/numpy) |
 | **Scikit-learn** | 🤖 | Machine Learning e análise de dados | [scikit-learn/scikit-learn](https://github.com/scikit-learn/scikit-learn) |
 | **Matplotlib** | 📊 | Visualização de dados e gráficos | [matplotlib/matplotlib](https://github.com/matplotlib/matplotlib) |
-| **Requests** | 🌐 | Requisições HTTP e consumo de APIs | [psf/requests](https://github.com/psf/requests) |
 | **PyArrow** | 🏹 | Leitura/escrita de Parquet e formatos colunares | [apache/arrow](https://github.com/apache/arrow) |
 | **SQLAlchemy** | 🗄️ | ORM e acesso a bancos de dados | [sqlalchemy/sqlalchemy](https://github.com/sqlalchemy/sqlalchemy) |
 
@@ -116,7 +112,6 @@ graph TB
 - 🔢 **NumPy**: Operações matemáticas e arrays eficientes
 - 🤖 **Scikit-learn**: Machine Learning e modelos preditivos
 - 📊 **Matplotlib**: Visualizar dados com gráficos
-- 🌐 **Requests**: Consumir APIs e fazer requisições HTTP
 - 🏹 **PyArrow**: Trabalhar com arquivos Parquet (formato otimizado para Big Data)
 - 🗄️ **SQLAlchemy**: Conectar e trabalhar com bancos de dados
 
@@ -144,7 +139,7 @@ Python é a linguagem mais usada no mercado de dados e ciência de dados:
 2. **Demanda de mercado**: Habilidade essencial em 90% das vagas de dados
 3. **Versatilidade**: Serve para análise, engenharia, machine learning, automação
 4. **Comunidade**: Grande comunidade, muitos recursos e bibliotecas open-source
-5. **Integração**: Fácil integração com bancos de dados, APIs, sistemas
+5. **Integração**: Fácil integração com bancos de dados e sistemas
 
 ### 🎯 Onde Python é usado?
 
@@ -152,7 +147,7 @@ Python é a linguagem mais usada no mercado de dados e ciência de dados:
 - **Data Analysis**: Análise exploratória, relatórios automatizados
 - **Data Science**: Machine Learning, estatística, modelagem
 - **Automação**: Scripts para tarefas repetitivas
-- **APIs e Integrações**: Conectar diferentes sistemas
+- **Integrações**: Conectar diferentes sistemas
 
 ### 💰 Salários no Brasil (2024)
 
@@ -203,7 +198,7 @@ SELECT * FROM vendas WHERE data_venda > '2024-01-01';
 ### 🐍 Python (Dia 2)
 **BUSCA dados de sistemas externos e integra diferentes fontes**
 
-- ✅ Dados vêm de sistemas externos (APIs, arquivos externos, Data Lakes)
+- ✅ Dados vêm de sistemas externos (arquivos externos, Data Lakes)
 - ✅ Foco em coletar e integrar
 - ✅ Linguagem imperativa (diz como fazer)
 - ✅ Ideal para automação e integração
@@ -211,9 +206,9 @@ SELECT * FROM vendas WHERE data_venda > '2024-01-01';
 
 **Exemplo:**
 ```python
-# BUSCA dados de uma API externa
-import requests
-dados = requests.get("https://api.coinbase.com/v2/prices/spot").json()
+# BUSCA dados de um Data Lake externo
+import pandas as pd
+df = pd.read_parquet("s3://bucket/dados.parquet")
 ```
 
 ### 🎯 Resumo
@@ -222,7 +217,7 @@ dados = requests.get("https://api.coinbase.com/v2/prices/spot").json()
 |---------|-----|--------|
 | **Dados** | Já existem no banco | Busca de sistemas externos |
 | **Foco** | Consultar e analisar | Coletar e integrar |
-| **Uso** | Análises e relatórios | APIs, scraping, automação |
+| **Uso** | Análises e relatórios | Data Lakes, automação |
 | **Quando usar** | Dados já armazenados | Dados externos, integração |
 
 **Python na engenharia de dados = COMUNICAR e INTEGRAR sistemas externos!**
@@ -237,7 +232,7 @@ Este **Dia 2** foi criado para resolver problemas reais de ingestão de dados. A
 1. **Por que preciso saber Python básico para trabalhar com dados?**
    - Variáveis, listas, dicionários - fundamentos essenciais
    - Como estruturas de dados se relacionam com dados reais
-   - Por que isso é a base para trabalhar com APIs e arquivos
+   - Por que isso é a base para trabalhar com arquivos e dados
 
 ### 💾 Exemplo 01: Conectar com DataLake
 2. **Como ler dados de um Data Lake usando a API S3?**
@@ -257,13 +252,6 @@ Este **Dia 2** foi criado para resolver problemas reais de ingestão de dados. A
    - Como combinar todos os conceitos aprendidos
    - Pipeline completo: ler do DataLake e salvar no banco
    - Fluxo EL (Extract, Load) sem processamento
-
-### 🌐 Exemplo 04: Ler API Bitcoin
-5. **Como obter dados de uma API e salvar no banco de dados?**
-   - O que é uma API e por que usar
-   - Como usar a biblioteca requests
-   - Como fazer requisições GET para APIs REST
-   - Pipeline completo: API → Processamento → Banco
 
 ---
 
@@ -289,7 +277,7 @@ Antes de trabalhar com dados, é essencial dominar os fundamentos de Python. Est
 - Lista de dicionários: estrutura ideal para dados estruturados
 
 **Por que é importante?**
-- APIs retornam dados em JSON (que são dicionários em Python)
+- Dados JSON são representados como dicionários em Python
 - Arquivos externos precisam ser baixados e processados
 - Pandas usa esses conceitos por baixo dos panos
 - Dicionários são a base para trabalhar com dados estruturados
@@ -309,13 +297,12 @@ Antes de trabalhar com dados, é essencial dominar os fundamentos de Python. Est
 
 ## 🎯 Progressão de Aprendizado
 
-A aula está organizada em **5 exemplos práticos** que cobrem todo o fluxo de ingestão de dados:
+A aula está organizada em **4 exemplos práticos** que cobrem todo o fluxo de ingestão de dados:
 
 1. **🔥 Exemplo 00: Aquecimento Python** - Fundamentos essenciais
 2. **💾 Exemplo 01: Conectar com DataLake** - Trabalhar com armazenamento em nuvem
 3. **🗄️ Exemplo 02: Salvar no Banco de Dados** - Persistir dados processados
 4. **🎯 Exemplo 03: Projeto Completo** - Pipeline DataLake → Banco
-5. **🌐 Exemplo 04: Ler API Bitcoin** - Integrar dados externos via API
 
 ---
 
@@ -402,48 +389,27 @@ A aula está organizada em **5 exemplos práticos** que cobrem todo o fluxo de i
 ### 🎯 Exemplo 03: Projeto Completo
 
 #### `exemplo-03-projeto-completo.py`
-**Conceito:** Buscar dados de API e salvar no PostgreSQL  
-**Pergunta de Negócio:** Como obter dados de uma API e salvar no banco de dados?  
+**Conceito:** Pipeline completo DataLake → Banco de Dados
+**Pergunta de Negócio:** Como fazer um pipeline completo: DataLake → Banco?
 **O que você aprende:**
-- O que é uma API e por que usar
-- Como usar a biblioteca requests
-- Como fazer requisições GET para APIs REST
-- Como processar dados JSON
-- Como salvar dados de API no PostgreSQL
-- Pipeline completo: API → Processamento → Banco
+- Como combinar todos os conceitos aprendidos
+- Pipeline completo: ler do DataLake e salvar no banco
+- Fluxo EL (Extract, Load) sem processamento
 
 **Conceitos Python:**
-- `requests.get()`: faz requisição HTTP GET para API
-- `response.json()`: converte resposta JSON para dicionário Python
-- `response.raise_for_status()`: verifica erros HTTP
-- `pd.DataFrame()`: cria DataFrame a partir de dicionário
+- `boto3.client()`: conectar com Data Lake
+- `pd.read_parquet()`: ler dados Parquet
+- `pd.DataFrame()`: cria DataFrame a partir de dados
 - `df.to_sql()`: salva DataFrame no PostgreSQL
 
-**O que é uma API?**
-- API (Application Programming Interface) = Interface de Programação de Aplicações
-- Forma de COMUNICAR com outros sistemas através da internet
-- Python na Engenharia de Dados = COMUNICAR com sistemas externos
-- SQL trabalha com dados que JÁ EXISTEM no banco
-- Python BUSCA dados de sistemas externos via APIs
-
-**Biblioteca Requests:**
-- A forma mais simples de fazer requisições HTTP em Python
-- Permite: GET (buscar), POST (enviar), PUT (atualizar), DELETE (deletar)
-- Para engenharia de dados, usamos principalmente GET para buscar dados
-
 **Fluxo Completo:**
-1. **Extract**: Buscar dados da API do Bitcoin (Coinbase)
-2. **Transform**: Processar dados JSON e enriquecer (adicionar timestamp, calcular BRL)
-3. **Load**: Salvar dados processados no PostgreSQL
+1. **Extract**: Ler dados do Data Lake (S3/Supabase Storage)
+2. **Load**: Salvar dados no PostgreSQL
 
 **Resultado Esperado:**
-- Dados obtidos da API do Bitcoin com sucesso
-- Dados processados e transformados
-- Dados salvos na tabela `cotacao_bitcoin` no PostgreSQL
-- Pipeline API → Banco funcionando
-
----
-
+- Dados lidos do Data Lake com sucesso
+- Dados salvos no PostgreSQL
+- Pipeline DataLake → Banco funcionando
 
 ---
 
@@ -482,9 +448,6 @@ python exemplo-02-salvar-banco-dados.py
 
 # 🎯 EXEMPLO 03: Projeto Completo (DataLake → Banco)
 python exemplo-03-projeto-completo.py
-
-# 🌐 EXEMPLO 04: Ler API Bitcoin
-python exemplo-04-ler-api-bitcoin.py
 ```
 
 ### 3. Modificar e Experimentar
@@ -526,12 +489,6 @@ Após fazer todos os exemplos, você deve ser capaz de:
 - [ ] Combinar boto3 + pandas + sqlalchemy
 - [ ] Criar pipeline completo DataLake → Banco
 - [ ] Entender fluxo EL (Extract, Load)
-
-### 🌐 Exemplo 04: Ler API Bitcoin
-- [ ] Entender o que é uma API
-- [ ] Usar biblioteca requests para fazer requisições HTTP
-- [ ] Processar dados JSON de APIs
-- [ ] Criar pipeline completo API → Processamento → Banco
 
 ---
 
@@ -586,16 +543,14 @@ Depois de dominar todos os exemplos:
 | 💾 01 | DataLake (S3/Supabase) | Conectar com Data Lakes, ler Parquet, análises com Pandas |
 | 🗄️ 02 | Salvar no PostgreSQL | Conectar Python com banco, salvar DataFrames, queries SQL |
 | 🎯 03 | Projeto Completo | Pipeline completo: DataLake → Banco (EL) |
-| 🌐 04 | API Bitcoin → Banco | Consumir APIs REST, processar JSON, salvar no banco |
 
-**Total: 5 exemplos práticos cobrindo todo o fluxo de ingestão de dados!** 🚀
+**Total: 4 exemplos práticos cobrindo todo o fluxo de ingestão de dados!** 🚀
 
 ---
 
 ## 🔗 Recursos Adicionais
 
 - [Documentação Pandas](https://pandas.pydata.org/docs/)
-- [Documentação Requests](https://requests.readthedocs.io/)
 - [Documentação PyArrow (Parquet)](https://arrow.apache.org/docs/python/)
 - [SQLAlchemy Tutorial](https://docs.sqlalchemy.org/en/20/tutorial/)
 
