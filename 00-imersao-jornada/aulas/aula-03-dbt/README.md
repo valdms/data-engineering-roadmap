@@ -289,31 +289,103 @@ vars:
 
 ---
 
-## Como Usar
+## Passo a Passo
+
+### 1. Instalar dependencias
 
 ```bash
-# Instalar
 pip install dbt-core dbt-postgres
+```
 
-# Navegar e testar conexao
-cd aulas/aula-03-dbt
+### 2. Configurar conexao com o banco
+
+O arquivo `profiles.yml` define a conexao com o PostgreSQL. Edite com suas credenciais:
+
+```yaml
+jornada_de_dados:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: seu-host.supabase.com
+      user: seu-usuario
+      password: "sua-senha"
+      port: 5432
+      dbname: postgres
+      schema: public
+      threads: 4
+```
+
+> O `profiles.yml` normalmente fica em `~/.dbt/profiles.yml`. Neste projeto esta na raiz para referencia.
+
+### 3. Navegar ate o projeto
+
+```bash
+cd 00-imersao-jornada/aulas/aula-03-dbt
+```
+
+### 4. Testar a conexao
+
+```bash
 dbt debug
+```
 
-# Executar tudo (dbt resolve dependencias)
+Esse comando valida se o dbt consegue se conectar ao banco e se o `profiles.yml` esta configurado corretamente. Voce deve ver `All checks passed!` no final.
+
+### 5. Executar os modelos
+
+```bash
+# Executar todos os 11 modelos (dbt resolve as dependencias automaticamente)
 dbt run
+```
 
-# Executar por camada
+O dbt executa na ordem correta: Bronze -> Silver -> Gold.
+
+### 6. Executar por camada (opcional)
+
+```bash
+# Somente bronze (4 views)
 dbt run --select tag:bronze
+
+# Somente silver (4 tables)
 dbt run --select tag:silver
+
+# Somente gold (3 tables)
 dbt run --select tag:gold
+```
 
-# Executar modelo especifico com suas dependencias
+### 7. Executar modelo especifico com dependencias
+
+```bash
+# Executa o modelo gold e todas as suas dependencias (bronze + silver)
 dbt run --select +gold_sales_vendas_temporais
+dbt run --select +gold_customer_success_clientes_segmentacao
+dbt run --select +gold_pricing_precos_competitividade
+```
 
-# Documentacao
+O `+` antes do nome significa: execute este modelo **e todos os modelos que ele depende**.
+
+### 8. Verificar os dados no banco
+
+Apos o `dbt run`, os schemas criados no PostgreSQL sao:
+
+| Schema | Tabelas |
+|--------|---------|
+| `public_bronze` | bronze_vendas, bronze_clientes, bronze_produtos, bronze_preco_competidores |
+| `public_silver` | silver_vendas, silver_clientes, silver_produtos, silver_preco_competidores |
+| `public_gold` | gold_sales_vendas_temporais, gold_customer_success_clientes_segmentacao, gold_pricing_precos_competitividade |
+
+### 9. Gerar documentacao
+
+```bash
+# Gerar catalogo de dados
 dbt docs generate
+
+# Abrir no navegador (localhost:8080)
 dbt docs serve
 ```
+
+A documentacao inclui o lineage graph (DAG) mostrando as dependencias entre os modelos.
 
 ---
 
