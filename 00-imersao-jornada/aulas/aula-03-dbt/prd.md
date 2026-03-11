@@ -99,18 +99,83 @@ vars:
 
 ---
 
-## Camada Bronze
+## Exemplo completo: ETL de Vendas
+
+Os 3 modelos abaixo mostram o fluxo completo para a tabela de vendas. Use como referencia para criar os demais.
+
+### bronze_vendas.sql
+
+```sql
+SELECT
+    id_venda,
+    data_venda,
+    id_cliente,
+    id_produto,
+    canal_venda,
+    quantidade,
+    preco_unitario
+FROM {{ source('raw', 'vendas') }}
+```
+
+### silver_vendas.sql
+
+```sql
+SELECT
+    v.id_venda,
+    v.id_cliente,
+    v.id_produto,
+    v.quantidade,
+    v.preco_unitario AS preco_venda,
+    v.data_venda,
+    v.canal_venda,
+    v.quantidade * v.preco_unitario AS receita_total,
+    DATE(v.data_venda::timestamp) AS data_venda_date,
+    EXTRACT(YEAR FROM v.data_venda::timestamp) AS ano_venda,
+    EXTRACT(MONTH FROM v.data_venda::timestamp) AS mes_venda,
+    EXTRACT(DAY FROM v.data_venda::timestamp) AS dia_venda,
+    EXTRACT(DOW FROM v.data_venda::timestamp) AS dia_semana,
+    EXTRACT(HOUR FROM v.data_venda::timestamp) AS hora_venda
+FROM {{ ref('bronze_vendas') }} v
+```
+
+### vendas_temporais.sql (gold/sales/)
+
+```sql
+SELECT
+    v.data_venda_date AS data_venda,
+    v.ano_venda,
+    v.mes_venda,
+    v.dia_venda,
+    CASE v.dia_semana
+        WHEN 0 THEN 'Domingo'
+        WHEN 1 THEN 'Segunda'
+        WHEN 2 THEN 'Terca'
+        WHEN 3 THEN 'Quarta'
+        WHEN 4 THEN 'Quinta'
+        WHEN 5 THEN 'Sexta'
+        WHEN 6 THEN 'Sabado'
+    END AS dia_semana_nome,
+    v.hora_venda,
+    SUM(v.receita_total) AS receita_total,
+    SUM(v.quantidade) AS quantidade_total,
+    COUNT(DISTINCT v.id_venda) AS total_vendas,
+    COUNT(DISTINCT v.id_cliente) AS total_clientes_unicos,
+    AVG(v.receita_total) AS ticket_medio
+FROM {{ ref('silver_vendas') }} v
+GROUP BY 1, 2, 3, 4, 5, 6
+ORDER BY data_venda DESC, v.hora_venda
+```
+
+---
+
+## Modelos restantes a criar
+
+### Camada Bronze
 
 **Objetivo:** Copia exata das tabelas raw. Sem transformacao. Serve como contrato do dado.
 **Materializacao:** view
 **Regra:** SELECT explicito de todas as colunas da fonte. Sem WHERE, sem CAST, sem transformacao.
 **Referencia:** Usar `{{ source('raw', 'nome_tabela') }}`
-
-### Modelos a criar
-
-#### bronze_vendas.sql
-- Fonte: `{{ source('raw', 'vendas') }}`
-- Colunas: id_venda, data_venda, id_cliente, id_produto, canal_venda, quantidade, preco_unitario
 
 #### bronze_clientes.sql
 - Fonte: `{{ source('raw', 'clientes') }}`
@@ -140,19 +205,6 @@ vars:
 - Referencia: Usar `{{ ref('bronze_nome') }}`
 
 ### Modelos a criar
-
-#### silver_vendas.sql
-- Fonte: `{{ ref('bronze_vendas') }}`
-- Colunas originais mantidas: id_venda, id_cliente, id_produto, quantidade, data_venda, canal_venda
-- Coluna renomeada: `preco_unitario` -> `preco_venda` (AS preco_venda)
-- Colunas calculadas:
-  - `receita_total` = quantidade * preco_unitario
-  - `data_venda_date` = DATE(data_venda::timestamp)
-  - `ano_venda` = EXTRACT(YEAR FROM data_venda::timestamp)
-  - `mes_venda` = EXTRACT(MONTH FROM data_venda::timestamp)
-  - `dia_venda` = EXTRACT(DAY FROM data_venda::timestamp)
-  - `dia_semana` = EXTRACT(DOW FROM data_venda::timestamp) -- 0=Domingo, 6=Sabado
-  - `hora_venda` = EXTRACT(HOUR FROM data_venda::timestamp)
 
 #### silver_clientes.sql
 - Fonte: `{{ ref('bronze_clientes') }}`
@@ -184,36 +236,6 @@ vars:
 - Referencia: Usar `{{ ref('silver_nome') }}`
 - Variaveis de negocio: Usar `{{ var('nome_variavel', valor_default) }}`
 - 1 modelo por data mart (3 data marts)
-
-### Data Mart: Sales
-
-#### vendas_temporais.sql
-
-**Pergunta de negocio:** Qual foi minha receita por data?
-
-- Pasta: `models/gold/sales/`
-- Fonte: `{{ ref('silver_vendas') }}`
-- Sem JOINs (usa apenas silver_vendas)
-- Agrupamento: GROUP BY data_venda_date, ano_venda, mes_venda, dia_venda, dia_semana_nome, hora_venda
-- Ordenacao: ORDER BY data_venda DESC, hora_venda
-
-**Colunas de saida:**
-
-| Coluna | Logica |
-|--------|--------|
-| data_venda | v.data_venda_date |
-| ano_venda | v.ano_venda |
-| mes_venda | v.mes_venda |
-| dia_venda | v.dia_venda |
-| dia_semana_nome | CASE v.dia_semana: 0='Domingo', 1='Segunda', 2='Terca', 3='Quarta', 4='Quinta', 5='Sexta', 6='Sabado' |
-| hora_venda | v.hora_venda |
-| receita_total | SUM(v.receita_total) |
-| quantidade_total | SUM(v.quantidade) |
-| total_vendas | COUNT(DISTINCT v.id_venda) |
-| total_clientes_unicos | COUNT(DISTINCT v.id_cliente) |
-| ticket_medio | AVG(v.receita_total) |
-
----
 
 ### Data Mart: Customer Success
 

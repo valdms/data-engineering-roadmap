@@ -308,7 +308,91 @@ sources:
 
 **Por que usar sources?** Em vez de escrever `SELECT * FROM public.vendas` direto no SQL, usamos `{{ source('raw', 'vendas') }}`. Isso permite ao dbt rastrear a linhagem dos dados (lineage) e saber de onde cada modelo vem.
 
-### 8. Testar a conexao
+### 8. Criar o ETL completo: exemplo com vendas
+
+Vamos criar os 3 modelos do fluxo de vendas para entender como funciona o ETL no dbt.
+
+#### 8.1 Bronze: `models/bronze/bronze_vendas.sql`
+
+Copia exata da tabela raw. Sem transformacao. Usa `{{ source() }}` para referenciar a tabela original.
+
+```sql
+SELECT
+    id_venda,
+    data_venda,
+    id_cliente,
+    id_produto,
+    canal_venda,
+    quantidade,
+    preco_unitario
+FROM {{ source('raw', 'vendas') }}
+```
+
+#### 8.2 Silver: `models/silver/silver_vendas.sql`
+
+Mantém todas as colunas do bronze + cria colunas calculadas. Usa `{{ ref() }}` para referenciar o modelo bronze.
+
+```sql
+SELECT
+    v.id_venda,
+    v.id_cliente,
+    v.id_produto,
+    v.quantidade,
+    v.preco_unitario AS preco_venda,
+    v.data_venda,
+    v.canal_venda,
+    -- Colunas calculadas
+    v.quantidade * v.preco_unitario AS receita_total,
+    -- Dimensoes temporais
+    DATE(v.data_venda::timestamp) AS data_venda_date,
+    EXTRACT(YEAR FROM v.data_venda::timestamp) AS ano_venda,
+    EXTRACT(MONTH FROM v.data_venda::timestamp) AS mes_venda,
+    EXTRACT(DAY FROM v.data_venda::timestamp) AS dia_venda,
+    EXTRACT(DOW FROM v.data_venda::timestamp) AS dia_semana,
+    EXTRACT(HOUR FROM v.data_venda::timestamp) AS hora_venda
+FROM {{ ref('bronze_vendas') }} v
+```
+
+#### 8.3 Gold: `models/gold/sales/vendas_temporais.sql`
+
+Agregacoes e metricas de negocio. Usa `{{ ref() }}` para referenciar o modelo silver.
+
+```sql
+SELECT
+    v.data_venda_date AS data_venda,
+    v.ano_venda,
+    v.mes_venda,
+    v.dia_venda,
+    CASE v.dia_semana
+        WHEN 0 THEN 'Domingo'
+        WHEN 1 THEN 'Segunda'
+        WHEN 2 THEN 'Terca'
+        WHEN 3 THEN 'Quarta'
+        WHEN 4 THEN 'Quinta'
+        WHEN 5 THEN 'Sexta'
+        WHEN 6 THEN 'Sabado'
+    END AS dia_semana_nome,
+    v.hora_venda,
+    SUM(v.receita_total) AS receita_total,
+    SUM(v.quantidade) AS quantidade_total,
+    COUNT(DISTINCT v.id_venda) AS total_vendas,
+    COUNT(DISTINCT v.id_cliente) AS total_clientes_unicos,
+    AVG(v.receita_total) AS ticket_medio
+FROM {{ ref('silver_vendas') }} v
+GROUP BY 1, 2, 3, 4, 5, 6
+ORDER BY data_venda DESC, v.hora_venda
+```
+
+#### 8.4 Testar o fluxo
+
+```bash
+# Executa bronze_vendas -> silver_vendas -> vendas_temporais
+dbt run --select +vendas_temporais
+```
+
+Os demais modelos (clientes, produtos, preco_competidores) seguem o mesmo padrao. As especificacoes completas estao no arquivo `prd.md`.
+
+### 9. Testar a conexao completa
 
 ```bash
 dbt debug
@@ -316,7 +400,7 @@ dbt debug
 
 Valida se o dbt consegue se conectar ao banco. Voce deve ver `All checks passed!` no final.
 
-### 9. Executar todos os modelos
+### 10. Executar todos os modelos
 
 ```bash
 dbt run
@@ -324,7 +408,7 @@ dbt run
 
 O dbt resolve as dependencias e executa na ordem correta: Bronze (4 views) -> Silver (4 tables) -> Gold (3 tables).
 
-### 10. Executar por camada (opcional)
+### 11. Executar por camada (opcional)
 
 ```bash
 # Somente bronze (4 views)
@@ -337,7 +421,7 @@ dbt run --select tag:silver
 dbt run --select tag:gold
 ```
 
-### 11. Executar modelo especifico com dependencias
+### 12. Executar modelo especifico com dependencias
 
 ```bash
 # O + executa o modelo e todos os que ele depende
@@ -346,7 +430,7 @@ dbt run --select +clientes_segmentacao
 dbt run --select +precos_competitividade
 ```
 
-### 12. Verificar os dados no banco
+### 13. Verificar os dados no banco
 
 Apos o `dbt run`, os schemas criados no PostgreSQL sao:
 
@@ -358,7 +442,7 @@ Apos o `dbt run`, os schemas criados no PostgreSQL sao:
 | `public_gold_cs` | clientes_segmentacao |
 | `public_gold_pricing` | precos_competitividade |
 
-### 13. Gerar documentacao
+### 14. Gerar documentacao
 
 ```bash
 # Gerar catalogo de dados
