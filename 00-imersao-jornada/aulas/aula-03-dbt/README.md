@@ -96,13 +96,7 @@ flowchart LR
 pip install dbt-core dbt-postgres
 ```
 
-### 2. Navegar ate o projeto
-
-```bash
-cd 00-imersao-jornada/aulas/aula-03-dbt
-```
-
-### 3. Inicializar o perfil de conexao
+### 2. Inicializar o perfil de conexao
 
 ```bash
 dbt init
@@ -123,9 +117,142 @@ schema [public]: public
 threads [1]: 4
 ```
 
-Isso cria o arquivo `~/.dbt/profiles.yml` com a conexao configurada.
+Isso cria o arquivo `~/.dbt/profiles.yml` e a pasta do projeto `ecommerce/`.
 
-### 4. Testar a conexao
+```bash
+cd ecommerce
+```
+
+### 3. Conhecer as pastas do dbt
+
+O `dbt init` cria a seguinte estrutura de pastas:
+
+| Pasta | O que faz |
+| ----- | --------- |
+| `models/` | Onde ficam os arquivos SQL que viram tabelas/views no banco |
+| `seeds/` | Arquivos CSV que o dbt carrega direto no banco |
+| `macros/` | Funcoes reutilizaveis em Jinja (como funcoes em Python) |
+| `tests/` | Testes customizados em SQL |
+| `snapshots/` | Captura historico de mudancas (SCD Type 2) |
+| `analyses/` | Queries SQL de analise que nao viram tabelas |
+
+### 4. Limpar a estrutura padrao
+
+Vamos remover as pastas que nao usaremos e o modelo de exemplo:
+
+```bash
+rm -rf analyses snapshots seeds macros tests
+rm -rf models/example
+```
+
+### 5. Criar a arquitetura Medalhao
+
+Vamos organizar os modelos em 3 camadas: Bronze -> Silver -> Gold.
+
+```bash
+mkdir -p models/bronze
+mkdir -p models/silver
+mkdir -p models/gold/sales
+mkdir -p models/gold/customer_success
+mkdir -p models/gold/pricing
+```
+
+Estrutura final:
+
+```text
+models/
+├── _sources.yml             # Definicao das tabelas fonte (raw)
+├── bronze/                  # 4 views  - Copia exata do raw
+├── silver/                  # 4 tables - Colunas calculadas
+└── gold/                    # 3 tables - 1 por Data Mart
+    ├── sales/
+    ├── customer_success/
+    └── pricing/
+```
+
+### 6. Configurar o dbt_project.yml
+
+Editar o `dbt_project.yml` para definir a materializacao e schema de cada camada. Esse arquivo e o coracao do projeto dbt — ele controla como cada modelo e materializado no banco.
+
+```yaml
+name: 'ecommerce'                    # Nome do projeto (mesmo do dbt init)
+version: '1.0.0'
+config-version: 2
+
+profile: 'ecommerce'                 # Deve bater com o nome no profiles.yml
+
+# Pastas do projeto
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Configuracoes de modelos por camada
+models:
+  ecommerce:                          # Deve bater com o name do projeto
+    bronze:
+      +materialized: view             # Views - sempre atualizadas, sem custo de storage
+      +schema: bronze                 # Schema: public_bronze
+      +tags: ["bronze", "raw"]
+      +meta:
+        modeling_layer: bronze
+
+    silver:
+      +materialized: table            # Tables - colunas calculadas persistidas
+      +schema: silver                 # Schema: public_silver
+      +tags: ["silver", "cleaned"]
+      +meta:
+        modeling_layer: silver
+
+    gold:
+      +materialized: table            # Tables - KPIs prontos para consumo
+      +schema: gold                   # Schema: public_gold
+      +tags: ["gold", "kpi", "metrics"]
+      +meta:
+        modeling_layer: gold
+
+# Variaveis do projeto
+vars:
+  segmentacao_vip_threshold: 10000    # Receita minima para cliente VIP
+  segmentacao_top_tier_threshold: 5000 # Receita minima para TOP_TIER
+```
+
+**Por que configurar aqui e nao dentro de cada `.sql`?** Centralizar no `dbt_project.yml` evita repetir `{{ config() }}` em cada modelo. Todos os modelos dentro da pasta `bronze/` herdam automaticamente `materialized: view` e `schema: bronze`.
+
+### 7. Criar o _sources.yml
+
+O `_sources.yml` diz ao dbt onde estao as tabelas originais no banco. Sem ele, o dbt nao sabe que as tabelas `vendas`, `clientes`, etc. existem.
+
+Criar o arquivo `models/_sources.yml`:
+
+```yaml
+version: 2
+
+sources:
+  - name: raw                        # Nome logico (usado no {{ source() }})
+    description: "Tabelas brutas do banco de dados"
+    schema: public                    # Schema real onde as tabelas estao no PostgreSQL
+    tables:
+      - name: vendas
+        description: "Tabela de vendas realizadas"
+      - name: clientes
+        description: "Tabela de clientes cadastrados"
+      - name: produtos
+        description: "Tabela de produtos cadastrados"
+      - name: preco_competidores
+        description: "Tabela de precos coletados de concorrentes"
+```
+
+**Por que usar sources?** Em vez de escrever `SELECT * FROM public.vendas` direto no SQL, usamos `{{ source('raw', 'vendas') }}`. Isso permite ao dbt rastrear a linhagem dos dados (lineage) e saber de onde cada modelo vem.
+
+### 8. Testar a conexao
 
 ```bash
 dbt debug
@@ -133,7 +260,7 @@ dbt debug
 
 Valida se o dbt consegue se conectar ao banco. Voce deve ver `All checks passed!` no final.
 
-### 5. Executar todos os modelos
+### 9. Executar todos os modelos
 
 ```bash
 dbt run
@@ -141,7 +268,7 @@ dbt run
 
 O dbt resolve as dependencias e executa na ordem correta: Bronze (4 views) -> Silver (4 tables) -> Gold (3 tables).
 
-### 6. Executar por camada (opcional)
+### 10. Executar por camada (opcional)
 
 ```bash
 # Somente bronze (4 views)
@@ -154,7 +281,7 @@ dbt run --select tag:silver
 dbt run --select tag:gold
 ```
 
-### 7. Executar modelo especifico com dependencias
+### 11. Executar modelo especifico com dependencias
 
 ```bash
 # O + executa o modelo e todos os que ele depende
@@ -163,7 +290,7 @@ dbt run --select +gold_customer_success_clientes_segmentacao
 dbt run --select +gold_pricing_precos_competitividade
 ```
 
-### 8. Verificar os dados no banco
+### 12. Verificar os dados no banco
 
 Apos o `dbt run`, os schemas criados no PostgreSQL sao:
 
@@ -173,7 +300,7 @@ Apos o `dbt run`, os schemas criados no PostgreSQL sao:
 | `public_silver` | silver_vendas, silver_clientes, silver_produtos, silver_preco_competidores |
 | `public_gold` | gold_sales_vendas_temporais, gold_customer_success_clientes_segmentacao, gold_pricing_precos_competitividade |
 
-### 9. Gerar documentacao
+### 13. Gerar documentacao
 
 ```bash
 # Gerar catalogo de dados
@@ -191,7 +318,7 @@ A documentacao inclui o lineage graph (DAG) mostrando as dependencias entre os m
 
 ```yaml
 models:
-  jornada_de_dados:
+  ecommerce:
     bronze:
       +materialized: view       # Views - sempre atualizadas
       +schema: bronze

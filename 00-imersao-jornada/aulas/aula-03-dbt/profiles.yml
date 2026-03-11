@@ -2,7 +2,7 @@
 # IMPORTANTE: Este arquivo normalmente fica em ~/.dbt/profiles.yml
 # Mas incluímos aqui como referência
 
-jornada_de_dados:
+ecommerce:
   target: dev
   outputs:
     dev:

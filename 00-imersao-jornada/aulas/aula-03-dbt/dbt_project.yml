@@ -1,9 +1,9 @@
-name: 'jornada_de_dados'
+name: 'ecommerce'
 version: '1.0.0'
 config-version: 2
 
 # Configuração do perfil de conexão
-profile: 'jornada_de_dados'
+profile: 'ecommerce'
 
 # Configurações do projeto
 model-paths: ["models"]
@@ -20,7 +20,7 @@ clean-targets:
 
 # Configurações de modelos por camada
 models:
-  jornada_de_dados:
+  ecommerce:
     bronze:
       +materialized: view
       +schema: bronze

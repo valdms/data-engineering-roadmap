@@ -81,7 +81,7 @@ models/
 
 ```yaml
 models:
-  jornada_de_dados:
+  ecommerce:
     bronze:
       +materialized: view
       +schema: bronze
