@@ -213,10 +213,15 @@ models:
 
     gold:
       +materialized: table            # Tables - KPIs prontos para consumo
-      +schema: gold                   # Schema: public_gold
       +tags: ["gold", "kpi", "metrics"]
       +meta:
         modeling_layer: gold
+      sales:
+        +schema: gold_sales           # Schema: public_gold_sales
+      customer_success:
+        +schema: gold_customer_success # Schema: public_gold_customer_success
+      pricing:
+        +schema: gold_pricing         # Schema: public_gold_pricing
 
 # Variaveis do projeto
 vars:
@@ -349,7 +354,9 @@ Apos o `dbt run`, os schemas criados no PostgreSQL sao:
 | ------ | ------- |
 | `public_bronze` | bronze_vendas, bronze_clientes, bronze_produtos, bronze_preco_competidores |
 | `public_silver` | silver_vendas, silver_clientes, silver_produtos, silver_preco_competidores |
-| `public_gold` | gold_sales_vendas_temporais, gold_customer_success_clientes_segmentacao, gold_pricing_precos_competitividade |
+| `public_gold_sales` | gold_sales_vendas_temporais |
+| `public_gold_customer_success` | gold_customer_success_clientes_segmentacao |
+| `public_gold_pricing` | gold_pricing_precos_competitividade |
 
 ### 13. Gerar documentacao
 
@@ -371,18 +378,23 @@ A documentacao inclui o lineage graph (DAG) mostrando as dependencias entre os m
 models:
   ecommerce:
     bronze:
-      +materialized: view       # Views - sempre atualizadas
+      +materialized: view
       +schema: bronze
     silver:
-      +materialized: table      # Tables - colunas calculadas persistidas
+      +materialized: table
       +schema: silver
     gold:
-      +materialized: table      # Tables - KPIs prontos para consumo
-      +schema: gold
+      +materialized: table
+      sales:
+        +schema: gold_sales
+      customer_success:
+        +schema: gold_customer_success
+      pricing:
+        +schema: gold_pricing
 
 vars:
-  segmentacao_vip_threshold: 10000    # Receita minima para VIP
-  segmentacao_top_tier_threshold: 5000 # Receita minima para TOP_TIER
+  segmentacao_vip_threshold: 10000
+  segmentacao_top_tier_threshold: 5000
 ```
 
 ---
