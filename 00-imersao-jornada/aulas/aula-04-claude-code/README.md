@@ -64,134 +64,325 @@ Tres diretores precisam de dados todos os dias. Cada um tem uma dor diferente:
 Voce vai usar **Claude Code + Python** para resolver os 3 diretores de uma vez:
 
 ```
-Projeto 1: Dashboard Streamlit    --> Self-service para os 3 diretores
-Projeto 2: Agente de Relatorios   --> Envia insights no email/Slack as 8h da manha
-```
-
-### Por que Claude Code?
-
-Claude Code e uma ferramenta de desenvolvimento assistido por IA que:
-
-- Gera codigo Python funcional a partir de instrucoes em linguagem natural
-- Le documentacao tecnica (como o `database.md`) para entender o contexto
-- Conecta com bancos de dados e cria visualizacoes automaticamente
-- Permite iterar rapidamente: "mude o grafico para barras horizontais"
-
-**A ideia:** Voce nao precisa saber Streamlit ou a API do Claude de cor. Voce precisa saber **o que perguntar** e **validar o resultado**. O Claude Code faz o trabalho pesado.
-
----
-
-## Estrutura do Projeto
-
-```
-aula-04-claude-code/
-├── README.md                    # Este arquivo
-├── database.md                  # Catalogo completo dos 3 Data Marts (contexto para o Claude Code)
-├── prd-dashboard.md             # PRD do Case 1: Dashboard
-├── prd-agente-relatorios.md     # PRD do Case 2: Agente de Relatorios
-├── case-01-dashboard/           # Codigo gerado pelo Claude Code
-│   ├── app.py                   # App Streamlit
-│   ├── requirements.txt
-│   └── .env.example
-└── case-02-agente/              # Codigo gerado pelo Claude Code
-    ├── agente.py                # Script do agente
-    ├── requirements.txt
-    └── .env.example
+Case 1: Dashboard Streamlit    --> Self-service para os 3 diretores
+Case 2: Agente de Relatorios   --> Envia insights as 8h da manha
 ```
 
 ---
 
-## O Papel do database.md
+## Pre-requisitos
 
-O arquivo `database.md` e o **contexto tecnico** que voce entrega para o Claude Code antes de pedir qualquer coisa. Ele contem:
+Antes de comecar, voce precisa ter:
 
-- Schema completo das 3 tabelas gold (colunas, tipos, descricoes)
-- Regras de negocio (segmentacao VIP, classificacao de preco)
-- Sample data real
-- Queries SQL prontas
-- Perguntas de negocio que cada tabela responde
+- [ ] Claude Code CLI instalado (`claude --version`)
+- [ ] Banco Supabase rodando com os 3 Data Marts gold (aula-03)
+- [ ] Connection string do banco PostgreSQL
+- [ ] Chave de API da Anthropic (para o Case 2)
 
-**Sem esse arquivo, o Claude Code nao sabe o que existe no banco.**
-**Com esse arquivo, ele gera dashboards e agentes que fazem sentido.**
+Detalhes de instalacao no **[GUIA_INSTALACAO.md](./GUIA_INSTALACAO.md)**.
 
 ---
 
 ## Passo a Passo
 
-### Preparacao (5 minutos)
+### Passo 1: Criar a estrutura de pastas
 
-1. Ter o Claude Code instalado (CLI)
-2. Ter o banco Supabase rodando com os 3 Data Marts da aula-03
-3. Ter as credenciais do banco (host, user, password)
-4. Ter uma chave de API da Anthropic (para o Case 2)
-
-### Case 1: Dashboard (15 minutos)
-
-**Objetivo:** Dashboard Streamlit com 3 paginas (1 por diretor) conectado ao banco.
-
-1. Abra o Claude Code no terminal
-2. Passe o `database.md` como contexto
-3. Passe o `prd-dashboard.md` como instrucao
-4. Valide o resultado
-5. Rode o dashboard localmente
+Crie a pasta do Case 1 com a pasta `.llm` dentro. A pasta `.llm` e onde voce guarda o **contexto tecnico** que o Claude Code vai ler antes de gerar codigo.
 
 ```bash
-# Depois do Claude Code gerar os arquivos:
+mkdir -p case-01-dashboard/.llm
+```
+
+### Passo 2: Copiar os arquivos de contexto para o Case 1
+
+O Claude Code precisa de 2 coisas para gerar codigo bom: **o que existe no banco** (database.md) e **o que voce quer construir** (prd.md).
+
+```bash
+cp database.md case-01-dashboard/.llm/database.md
+cp prd-dashboard.md case-01-dashboard/.llm/prd.md
+```
+
+A pasta fica assim:
+
+```
+case-01-dashboard/
+└── .llm/
+    ├── database.md    # Catalogo dos 3 Data Marts (schemas, colunas, sample data)
+    └── prd.md         # O que o dashboard deve ter (paginas, graficos, KPIs)
+```
+
+### Passo 3: Entrar na pasta e iniciar o Claude Code
+
+```bash
 cd case-01-dashboard
+claude --dangerously-skip-permissions
+```
+
+O flag `--dangerously-skip-permissions` da acesso total ao Claude Code: ele pode criar arquivos, instalar dependencias e executar comandos sem pedir confirmacao a cada passo. Isso acelera o fluxo na aula.
+
+O Claude Code abre um terminal interativo. Ele ja consegue ler os arquivos da pasta `.llm/` automaticamente.
+
+### Passo 4: Rodar o /init e criar o CLAUDE.md
+
+Dentro do Claude Code, rode:
+
+```
+/init
+```
+
+O `/init` cria um arquivo `CLAUDE.md` na raiz do projeto. Esse arquivo e o **manual do projeto para o Claude Code**. Ele funciona como uma `system message` persistente: toda vez que voce abrir o Claude Code nessa pasta, ele le o `CLAUDE.md` primeiro.
+
+**O que colocar no CLAUDE.md:**
+
+O `/init` vai gerar um arquivo base. Edite para incluir:
+
+```markdown
+# Dashboard E-commerce
+
+## Contexto
+Dashboard Streamlit para 3 diretores de um e-commerce.
+Conecta no banco PostgreSQL (Supabase) e consome 3 Data Marts gold.
+
+## Stack
+- Python 3.10+
+- Streamlit
+- Plotly (graficos)
+- psycopg2-binary (conexao PostgreSQL)
+- python-dotenv
+
+## Banco de Dados
+Connection string via variavel de ambiente POSTGRES_URL no arquivo .env.
+Ver .llm/database.md para schemas completos das tabelas.
+
+## Regras
+- Nao commitar .env com credenciais
+- Formatar valores monetarios em reais (R$)
+- Usar plotly para todos os graficos (nao matplotlib)
+- Layout wide no Streamlit
+```
+
+**Por que o CLAUDE.md importa?**
+
+Sem ele, toda vez que voce abre o Claude Code, precisa explicar o projeto do zero. Com ele, o Claude Code ja sabe:
+- Qual e o projeto
+- Qual stack usar
+- Onde esta o banco
+- Quais regras seguir
+
+E como um onboarding automatico.
+
+### Passo 5: Pedir para o Claude Code construir o dashboard
+
+Agora que o contexto esta pronto, peca:
+
+```
+Leia o .llm/prd.md e o .llm/database.md e construa o dashboard completo.
+```
+
+O Claude Code vai:
+1. Ler o PRD (o que construir)
+2. Ler o database.md (quais tabelas e colunas existem)
+3. Gerar o `app.py`, `requirements.txt` e `.env.example`
+
+**Valide o resultado.** Se algo nao ficou como voce queria:
+
+```
+Mude o grafico de receita para barras horizontais.
+Adicione um filtro de mes na pagina de Vendas.
+O ticket medio esta errado, deve ser receita / vendas.
+```
+
+Iterar e parte do processo. O PRD e o ponto de partida, nao o resultado final.
+
+### Passo 6: Testar o dashboard
+
+```bash
+# Criar ambiente virtual
+python -m venv .venv
+source .venv/bin/activate   # Mac/Linux
+# .venv\Scripts\activate    # Windows
+
+# Instalar dependencias
 pip install -r requirements.txt
+
+# Criar .env com a connection string
+cp .env.example .env
+# Editar .env com suas credenciais
+
+# Rodar
 streamlit run app.py
 ```
 
-**Entrega:** Dashboard rodando em `localhost:8501` com os dados reais do banco.
+O dashboard abre em `http://localhost:8501`. Verifique:
+- [ ] Pagina de Vendas: KPIs e 3 graficos com dados reais
+- [ ] Pagina de Clientes: segmentacao e top 10
+- [ ] Pagina de Pricing: classificacao e alertas
 
-### Case 2: Agente de Relatorios (10 minutos)
+---
 
-**Objetivo:** Script Python que gera relatorio diario e pode ser agendado para rodar as 8h.
+### Passo 7: Criar a estrutura do Case 2
 
-1. Abra o Claude Code no terminal
-2. Passe o `database.md` como contexto
-3. Passe o `prd-agente-relatorios.md` como instrucao
-4. Valide o resultado
-5. Teste o agente manualmente
+Repita o processo para o Agente de Relatorios:
 
 ```bash
-# Depois do Claude Code gerar os arquivos:
+cd ..
+mkdir -p case-02-agente/.llm
+cp database.md case-02-agente/.llm/database.md
+cp prd-agente-relatorios.md case-02-agente/.llm/prd.md
+```
+
+### Passo 8: Iniciar o Claude Code no Case 2
+
+```bash
 cd case-02-agente
+claude --dangerously-skip-permissions
+```
+
+### Passo 9: Rodar o /init e criar o CLAUDE.md
+
+```
+/init
+```
+
+Edite o `CLAUDE.md` gerado:
+
+```markdown
+# Agente de Relatorios Diarios
+
+## Contexto
+Script Python que consulta 3 Data Marts gold no PostgreSQL,
+envia os dados para a API do Claude e gera um relatorio executivo
+diario para 3 diretores (Comercial, CS, Pricing).
+
+## Stack
+- Python 3.10+
+- anthropic (SDK)
+- psycopg2-binary
+- pandas
+- python-dotenv
+
+## Banco de Dados
+Connection string via POSTGRES_URL no .env.
+Ver .llm/database.md para schemas completos.
+
+## API
+Chave da Anthropic via ANTHROPIC_API_KEY no .env.
+Usar modelo claude-sonnet-4-20250514 para custo baixo.
+
+## Regras
+- Nao commitar .env com credenciais
+- Tratar erro de conexao antes de chamar a API
+- Salvar relatorio como .md com data no nome
+- Logging com timestamps em cada etapa
+```
+
+### Passo 10: Pedir para o Claude Code construir o agente
+
+```
+Leia o .llm/prd.md e o .llm/database.md e construa o agente de relatorios completo.
+```
+
+### Passo 11: Testar o agente
+
+```bash
+# Criar ambiente virtual
+python -m venv .venv
+source .venv/bin/activate
+
+# Instalar dependencias
 pip install -r requirements.txt
+
+# Criar .env
+cp .env.example .env
+# Editar .env com credenciais
+
+# Rodar
 python agente.py
 ```
 
-**Entrega:** Relatorio gerado no terminal/arquivo com insights dos 3 diretores.
+O relatorio deve aparecer no terminal e ser salvo como `relatorio_YYYY-MM-DD.md`.
+
+---
+
+## Estrutura Final
+
+Ao final dos 2 cases, a pasta fica assim:
+
+```
+aula-04-claude-code/
+├── README.md                        # Este arquivo (passo a passo)
+├── GUIA_INSTALACAO.md               # Instalacao do Claude Code e dependencias
+├── database.md                      # Catalogo dos 3 Data Marts gold
+├── prd-dashboard.md                 # PRD original do Case 1
+├── prd-agente-relatorios.md         # PRD original do Case 2
+│
+├── case-01-dashboard/               # Case 1: Dashboard
+│   ├── CLAUDE.md                    # Contexto do projeto para o Claude Code
+│   ├── .llm/
+│   │   ├── database.md              # Copia do catalogo de dados
+│   │   └── prd.md                   # PRD do dashboard
+│   ├── app.py                       # App Streamlit (gerado pelo Claude Code)
+│   ├── requirements.txt             # Dependencias
+│   ├── .env.example                 # Template de variaveis
+│   └── .env                         # Credenciais reais (nao commitar)
+│
+└── case-02-agente/                  # Case 2: Agente de Relatorios
+    ├── CLAUDE.md                    # Contexto do projeto para o Claude Code
+    ├── .llm/
+    │   ├── database.md              # Copia do catalogo de dados
+    │   └── prd.md                   # PRD do agente
+    ├── agente.py                    # Script do agente (gerado pelo Claude Code)
+    ├── requirements.txt             # Dependencias
+    ├── .env.example                 # Template de variaveis
+    └── .env                         # Credenciais reais (nao commitar)
+```
 
 ---
 
 ## Conceitos que Voce Aprende
 
-### 1. Prompt Engineering para Codigo
+### 1. A Pasta .llm/ (Contexto para IA)
 
-Voce nao escreve codigo do zero. Voce escreve **instrucoes claras** para o Claude Code:
+A pasta `.llm/` e uma convencao para guardar arquivos que servem de **contexto tecnico para agentes de IA**. Nao e codigo, nao e config — e documentacao que a IA le antes de trabalhar.
 
-**Instrucao ruim:**
+| Arquivo | Funcao |
+| ------- | ------ |
+| `.llm/database.md` | O que existe no banco (schemas, colunas, regras) |
+| `.llm/prd.md` | O que voce quer construir (requisitos, telas, comportamento) |
+
+**Analogia:** Se o Claude Code e um desenvolvedor junior que acabou de entrar na empresa, a pasta `.llm/` e o onboarding escrito. Quanto melhor o onboarding, menos perguntas ele faz e melhor o codigo que ele entrega.
+
+### 2. O CLAUDE.md (System Message do Projeto)
+
+O `CLAUDE.md` e um arquivo especial que o Claude Code le **automaticamente** toda vez que abre na pasta. Funciona como uma system message persistente.
+
+| Aspecto | Sem CLAUDE.md | Com CLAUDE.md |
+| ------- | ------------- | ------------- |
+| Primeira mensagem | "Este e um projeto Streamlit que..." | Ja sabe o projeto |
+| Stack | Pode escolher matplotlib | Sabe que deve usar plotly |
+| Banco | "Qual e a connection string?" | Sabe que esta no .env |
+| Erros repetidos | Comete os mesmos | Le as regras e evita |
+
+**O /init gera a estrutura base.** Voce edita com as regras especificas do projeto.
+
+### 3. PRD como Interface Humano-IA
+
+O PRD (Product Requirements Document) nao e um documento burocrtico. E a **instrucao precisa** que voce da para o Claude Code. A diferenca entre um resultado bom e ruim esta na qualidade do PRD:
+
+**PRD vago → resultado generico:**
 ```
 Faz um dashboard de vendas.
 ```
 
-**Instrucao boa:**
+**PRD especifico → resultado preciso:**
 ```
-Crie um dashboard Streamlit com 3 paginas.
-Pagina 1 (Vendas): conecte na tabela public_gold_sales.vendas_temporais,
-mostre receita total por mes em grafico de linha e ticket medio por dia da semana
-em grafico de barras.
-Use o database.md como referencia das colunas e tipos.
+Pagina de Vendas com 4 KPIs (receita total, total vendas, ticket medio,
+clientes unicos) em st.columns(4), grafico de receita diaria em px.line,
+e grafico de vendas por hora em px.bar. Dados da tabela
+public_gold_sales.vendas_temporais.
 ```
 
-A diferenca e **contexto** e **especificidade**. O PRD faz esse papel.
-
-### 2. Documentacao como Interface
-
-O `database.md` nao e documentacao para humanos lerem uma vez e esquecerem. E uma **interface tecnica** entre o banco de dados e o agente de IA. Quanto melhor a documentacao, melhor o resultado.
-
-### 3. Data Products
+### 4. Data Products
 
 Dashboard e agente de relatorios sao **produtos de dados**. O pipeline (SQL + Python + dbt) so tem valor quando alguem consome o resultado. Hoje voce fecha o ciclo:
 
