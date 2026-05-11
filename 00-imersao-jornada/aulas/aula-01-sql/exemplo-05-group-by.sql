@@ -1,5 +1,5 @@
 -- ============================================
--- EXEMPLO 06: GROUP BY - Agrupando resultados
+-- EXEMPLO 05: GROUP BY - Agrupando resultados
 -- ============================================
 -- Conceito: GROUP BY para agrupar e agregar por dimensão
 -- Pergunta de negócio: Qual a receita por canal de venda? E por mês?
@@ -84,17 +84,18 @@ ORDER BY total_produtos DESC;
 -- ============================================
 -- 6. HAVING - Filtrando grupos
 -- ============================================
--- Pergunta de negócio: Quais categorias geram mais de R$ 50.000 em receita?
+-- Pergunta de negócio: Em quais meses a receita ultrapassou R$ 50.000?
 -- WHERE filtra linhas ANTES do agrupamento
--- HAVING filtra grupos DEPOIS do agrupamento
+-- HAVING filtra grupos DEPOIS do agrupamento (você só pode usar agregações no HAVING)
 
 SELECT
-    p.categoria,
-    SUM(v.quantidade * v.preco_unitario) AS receita_total,
+    EXTRACT(YEAR FROM data_venda::timestamp) AS ano,
+    EXTRACT(MONTH FROM data_venda::timestamp) AS mes,
+    SUM(quantidade * preco_unitario) AS receita_total,
     COUNT(*) AS total_vendas
-FROM vendas v
-INNER JOIN produtos p
-    ON v.id_produto = p.id_produto
-GROUP BY p.categoria
-HAVING SUM(v.quantidade * v.preco_unitario) > 50000
+FROM vendas
+GROUP BY
+    EXTRACT(YEAR FROM data_venda::timestamp),
+    EXTRACT(MONTH FROM data_venda::timestamp)
+HAVING SUM(quantidade * preco_unitario) > 50000
 ORDER BY receita_total DESC;

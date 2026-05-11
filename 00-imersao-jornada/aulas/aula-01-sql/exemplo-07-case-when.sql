@@ -1,5 +1,5 @@
 -- ============================================
--- EXEMPLO 09: CASE WHEN - Classificações e categorizações
+-- EXEMPLO 07: CASE WHEN - Classificações e categorizações
 -- ============================================
 -- Conceito: CASE WHEN para criar colunas de classificação condicional
 -- Pergunta de negócio: Como classificar produtos por faixa de preço? E vendas por tamanho?
